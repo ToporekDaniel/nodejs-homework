@@ -78,6 +78,10 @@ router.put("/:contactId", async (req, res, next) => {
   const { contactId } = req.params;
   const { body } = req;
 
+  if (Object.keys(body).length === 0) {
+    return res.status(400).json({ message: "missing fields" });
+  }
+
   try {
     const { error, value } = schemaPUT.validate(body);
     if (error) {

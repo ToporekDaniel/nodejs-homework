@@ -73,7 +73,7 @@
   },
   {
     "id": "1711757299881",
-    "name": "Nie Kot",
+    "name": "teraz to jest żyrafa",
     "email": "niekot@kot.net",
     "phone": "111 222 333"
   },
@@ -86,6 +86,12 @@
   {
     "id": "1711829847825",
     "name": "Ala ma teraz psa",
+    "email": "wufwuf@dog.com",
+    "phone": "777 777 777"
+  },
+  {
+    "id": "1711831377503",
+    "name": "Ala ma teraz nosorożca",
     "email": "wufwuf@dog.com",
     "phone": "777 777 777"
   }
