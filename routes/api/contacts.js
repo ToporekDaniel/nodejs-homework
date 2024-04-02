@@ -7,27 +7,8 @@ const {
   addContact,
   updateContact,
 } = require("../../models/contacts");
-const Joi = require("@hapi/joi");
 
-const schemaPOST = Joi.object({
-  name: Joi.string().min(2).max(30).required(),
-  email: Joi.string().email().required(),
-  phone: Joi.string()
-    .pattern(/^[0-9()\s+-]+$/)
-    .min(8)
-    .max(30)
-    .required(),
-});
-
-const schemaPUT = Joi.object({
-  name: Joi.string().min(2).max(30).optional(),
-  email: Joi.string().email().optional(),
-  phone: Joi.string()
-    .pattern(/^[0-9()\s+-]+$/)
-    .min(8)
-    .max(30)
-    .optional(),
-});
+const { schemaPOST, schemaPUT } = require("../../validate");
 
 router.get("/", async (req, res, next) => {
   try {
@@ -42,9 +23,10 @@ router.get("/:contactId", async (req, res, next) => {
   const { contactId } = req.params;
   try {
     const contact = await getContactById(contactId);
+    if (!contact) return res.status(404).json({ message: "Contact not found" });
     res.status(200).json(contact);
   } catch (error) {
-    res.status(404).json({ message: "Contact not found" });
+    next(error);
   }
 });
 
@@ -70,7 +52,11 @@ router.delete("/:contactId", async (req, res, next) => {
     await removeContact(contactId);
     res.status(200).json({ message: "contact deleted" });
   } catch (error) {
-    res.status(404).json({ message: "Not found" });
+    if (error.message === "Contact not found") {
+      res.status(404).json({ error: "Contact not found" });
+    } else {
+      next(error);
+    }
   }
 });
 

@@ -16,7 +16,7 @@ const getContactById = async (contactId) => {
   try {
     const contacts = await listContacts();
     const contact = contacts.find((contact) => contact.id === contactId);
-    if (!contact) throw new Error("Not found");
+    if (!contact) return null;
     return contact;
   } catch (error) {
     throw new Error(error.message);
@@ -33,7 +33,7 @@ const removeContact = async (contactId) => {
     contacts.splice(index, 1);
     await fs.writeFile(contactsFilePath, JSON.stringify(contacts, null, 2));
   } catch (error) {
-    throw new Error("Error removing contact");
+    throw new Error(error.message);
   }
 };
 
