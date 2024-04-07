@@ -7,7 +7,6 @@ const {
   addContact,
   updateContact,
 } = require("../../models/contacts");
-
 const { schemaPOST, schemaPUT } = require("../../validate");
 
 router.get("/", async (req, res, next) => {
