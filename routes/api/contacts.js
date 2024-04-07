@@ -7,7 +7,6 @@ const {
   addContact,
   updateContact,
 } = require("../../models/contacts");
-const { schemaPOST, schemaPUT } = require("../../validate");
 
 router.get("/", async (req, res, next) => {
   try {
@@ -31,13 +30,7 @@ router.get("/:contactId", async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    const { error, value } = schemaPOST.validate(req.body, {
-      stripUnknown: true,
-    });
-    if (error) {
-      return res.status(400).json({ message: error.details[0].message });
-    }
-    const { name, email, phone } = value;
+    const { name, email, phone } = req.body;
     const newContact = await addContact({ name, email, phone });
     res.status(201).json(newContact);
   } catch (error) {
@@ -49,7 +42,7 @@ router.delete("/:contactId", async (req, res, next) => {
   const { contactId } = req.params;
   try {
     await removeContact(contactId);
-    res.status(200).json({ message: "contact deleted" });
+    res.status(200).json({ message: "Contact deleted" });
   } catch (error) {
     if (error.message === "Contact not found") {
       res.status(404).json({ error: "Contact not found" });
@@ -61,21 +54,11 @@ router.delete("/:contactId", async (req, res, next) => {
 
 router.put("/:contactId", async (req, res, next) => {
   const { contactId } = req.params;
-  const { body } = req;
-
-  if (Object.keys(body).length === 0) {
-    return res.status(400).json({ message: "missing fields" });
-  }
-
+  const body = req.body;
   try {
-    const { error, value } = schemaPUT.validate(body);
-    if (error) {
-      return res.status(400).json({ message: error.details[0].message });
-    }
-
-    const updatedContact = await updateContact(contactId, value);
+    const updatedContact = await updateContact(contactId, body);
     if (!updatedContact) {
-      return res.status(404).json({ message: "Not found" });
+      return res.status(404).json({ message: "Contact not found" });
     }
     res.status(200).json(updatedContact);
   } catch (error) {
