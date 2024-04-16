@@ -23,17 +23,20 @@ const addContact = async (body) => {
   return Contact.create(body);
 };
 
-
 const updateContact = async (contactId, body) => {
   const contact = await Contact.findById(contactId);
   if (!contact) {
     throw new Error("Contact not found");
   }
-  Object.assign(contact, body);
+
+  Object.keys(body).forEach((key) => {
+    if (body[key] !== undefined) {
+      contact[key] = body[key];
+    }
+  });
   await contact.save();
   return contact;
 };
-
 
 const updateContactFavorite = async (contactId, { favorite }) => {
   const contact = await Contact.findById(contactId);

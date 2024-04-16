@@ -94,6 +94,11 @@ router.put(
   async (req, res, next) => {
     const { contactId } = req.params;
     const { name, email, phone } = req.validatedBody;
+    if (Object.keys(req.body).length === 0) {
+      return res
+        .status(400)
+        .json({ message: "Body is empty, no data to update" });
+    }
     try {
       const updatedContact = await updateContact(contactId, {
         name,
