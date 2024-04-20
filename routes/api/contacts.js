@@ -8,80 +8,134 @@ const {
   updateContact,
 } = require("../../models/contacts");
 
-const { schemaPOST, schemaPUT } = require("../../validate");
+const { schemaPOST, schemaPUT } = require("../../models/validate");
+
+const mongoose = require("mongoose");
+
+const checkID = (contactId) => {
+  if (!mongoose.Types.ObjectId.isValid(contactId)) {
+    return false;
+  }
+  return true;
+};
+
+const validateContactId = (req, res, next) => {
+  const { contactId } = req.params;
+  if (!checkID(contactId)) {
+    return res.status(400).json({ message: "Invalid contact ID format" });
+  }
+  next();
+};
+
+const validateBody = (schema) => {
+  return (req, res, next) => {
+    const { error, value } = schema.validate(req.body, {
+      stripUnknown: true,
+    });
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message });
+    }
+    req.validatedBody = value;
+    next();
+  };
+};
 
 router.get("/", async (req, res, next) => {
   try {
     const contacts = await listContacts();
     res.status(200).json(contacts);
   } catch (error) {
-    next(error);
+    console.error(error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-router.get("/:contactId", async (req, res, next) => {
+router.get("/:contactId", validateContactId, async (req, res, next) => {
   const { contactId } = req.params;
   try {
     const contact = await getContactById(contactId);
     if (!contact) return res.status(404).json({ message: "Contact not found" });
     res.status(200).json(contact);
   } catch (error) {
-    next(error);
+    console.error(error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", validateBody(schemaPOST), async (req, res, next) => {
   try {
-    const { error, value } = schemaPOST.validate(req.body, {
-      stripUnknown: true,
-    });
-    if (error) {
-      return res.status(400).json({ message: error.details[0].message });
-    }
-    const { name, email, phone } = value;
+    const { name, email, phone } = req.validatedBody;
     const newContact = await addContact({ name, email, phone });
     res.status(201).json(newContact);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error(error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-router.delete("/:contactId", async (req, res, next) => {
+router.delete("/:contactId", validateContactId, async (req, res, next) => {
   const { contactId } = req.params;
   try {
-    await removeContact(contactId);
-    res.status(200).json({ message: "contact deleted" });
-  } catch (error) {
-    if (error.message === "Contact not found") {
-      res.status(404).json({ error: "Contact not found" });
-    } else {
-      next(error);
+    const result = await removeContact(contactId);
+    if (!result) {
+      return res.status(404).json({ message: "Contact not found" });
     }
+    res.status(200).json({ message: "Contact deleted" });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-router.put("/:contactId", async (req, res, next) => {
-  const { contactId } = req.params;
-  const { body } = req;
-
-  if (Object.keys(body).length === 0) {
-    return res.status(400).json({ message: "missing fields" });
-  }
-
-  try {
-    const { error, value } = schemaPUT.validate(body);
-    if (error) {
-      return res.status(400).json({ message: error.details[0].message });
+router.put(
+  "/:contactId",
+  validateContactId,
+  validateBody(schemaPUT),
+  async (req, res, next) => {
+    const { contactId } = req.params;
+    const { name, email, phone } = req.validatedBody;
+    if (Object.keys(req.body).length === 0) {
+      return res
+        .status(400)
+        .json({ message: "Body is empty, no data to update" });
     }
-
-    const updatedContact = await updateContact(contactId, value);
-    if (!updatedContact) {
-      return res.status(404).json({ message: "Not found" });
+    try {
+      const updatedContact = await updateContact(contactId, {
+        name,
+        email,
+        phone,
+      });
+      if (!updatedContact) {
+        return res.status(404).json({ message: "Contact not found" });
+      }
+      res.status(200).json(updatedContact);
+    } catch (error) {
+      console.error(error.message);
+      res.status(500).json({ message: "Internal Server Error" });
     }
-    res.status(200).json(updatedContact);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
   }
-});
+);
+
+router.patch(
+  "/:contactId/favorite",
+  validateContactId,
+  async (req, res, next) => {
+    const { contactId } = req.params;
+    const { favorite } = req.body;
+    if (favorite === undefined) {
+      return res.status(400).json({ message: "missing field favorite" });
+    }
+    try {
+      const updatedContact = await updateContact(contactId, { favorite });
+      if (!updatedContact) {
+        return res.status(404).json({ message: "Contact not found" });
+      }
+      res.status(200).json(updatedContact);
+    } catch (error) {
+      console.error(error.message);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  }
+);
 
 module.exports = router;

@@ -1,70 +1,56 @@
-const fs = require("fs/promises");
-const path = require("path");
-
-const contactsFilePath = path.join(__dirname, "../models/contacts.json");
+const Contact = require("./contactSchema");
+const mongoose = require("mongoose");
 
 const listContacts = async () => {
-  try {
-    const data = await fs.readFile(contactsFilePath);
-    return JSON.parse(data);
-  } catch (error) {
-    throw new Error("Error reading contacts file");
-  }
+  return Contact.find();
 };
 
 const getContactById = async (contactId) => {
   try {
-    const contacts = await listContacts();
-    const contact = contacts.find((contact) => contact.id === contactId);
-    if (!contact) return null;
-    return contact;
+    return await Contact.findById(contactId);
   } catch (error) {
-    throw new Error(error.message);
-  }
-};
-
-const removeContact = async (contactId) => {
-  try {
-    const contacts = await listContacts();
-    const index = contacts.findIndex((contact) => contact.id === contactId);
-    if (index === -1) {
-      throw new Error("Contact not found");
+    // Tak zostawiam te komentarze bo potem za grosz nie będę wiedział jak to zrobiłem
+    // Jeśli wystąpił błąd "Cast to ObjectId failed", oznacza to, że identyfikator jest nieprawidłowy
+    if (error instanceof mongoose.Error.CastError) {
+      return null; // Zwracamy null, aby wskazać, że kontakt nie został znaleziony
     }
-    contacts.splice(index, 1);
-    await fs.writeFile(contactsFilePath, JSON.stringify(contacts, null, 2));
-  } catch (error) {
-    throw new Error(error.message);
+    // Jeśli wystąpił inny błąd, rzuć go dalej
+    throw error;
   }
 };
 
 const addContact = async (body) => {
-  try {
-    const { name, email, phone } = body;
-    if (!name || !email || !phone) {
-      throw new Error("Missing required fields");
-    }
-    const newContact = { id: Date.now().toString(), name, email, phone };
-    const contacts = await listContacts();
-    contacts.push(newContact);
-    await fs.writeFile(contactsFilePath, JSON.stringify(contacts, null, 2));
-    return newContact;
-  } catch (error) {
-    throw new Error(error.message);
-  }
+  return Contact.create(body);
 };
 
 const updateContact = async (contactId, body) => {
-  try {
-    const contacts = await listContacts();
-    const index = contacts.findIndex((contact) => contact.id === contactId);
-    if (index === -1) return null;
-    const updatedContact = { ...contacts[index], ...body };
-    contacts[index] = updatedContact;
-    await fs.writeFile(contactsFilePath, JSON.stringify(contacts, null, 2));
-    return updatedContact;
-  } catch (error) {
-    throw new Error(error.message);
+  const contact = await Contact.findById(contactId);
+  if (!contact) {
+    throw new Error("Contact not found");
   }
+
+  Object.keys(body).forEach((key) => {
+    if (body[key] !== undefined) {
+      contact[key] = body[key];
+    }
+  });
+  await contact.save();
+  return contact;
+};
+
+const updateContactFavorite = async (contactId, { favorite }) => {
+  const contact = await Contact.findById(contactId);
+  if (!contact) {
+    throw new Error("Contact not found");
+  }
+  Object.assign(contact, { favorite });
+  await contact.save();
+  return contact;
+};
+
+const removeContact = async (contactId) => {
+  const result = await Contact.deleteOne({ _id: contactId });
+  return result.deletedCount > 0; // Zwraca true, jeśli kontakt został usunięty, w przeciwnym razie false
 };
 
 module.exports = {
@@ -73,4 +59,5 @@ module.exports = {
   removeContact,
   addContact,
   updateContact,
+  updateContactFavorite,
 };
