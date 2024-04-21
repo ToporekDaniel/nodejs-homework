@@ -1,6 +1,6 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const { registerUser, authenticateUser } = require("../../models/user");
+const { registerUser, authenticateUser } = require("../../controllers/user");
 const { registerSchema, loginSchema } = require("../../models/validateUser");
 
 const router = express.Router();
@@ -30,7 +30,7 @@ router.post("/login", async (req, res) => {
   try {
     const user = await authenticateUser(req.body);
     const payload = { id: user._id, email: user.email };
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+    const token = jwt.sign(payload, process.env.SECRET, {
       expiresIn: "12h",
     });
     res.status(200).json({

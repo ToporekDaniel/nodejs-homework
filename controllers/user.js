@@ -1,4 +1,4 @@
-const User = require("./userSchema");
+const User = require("../models/userSchema");
 
 const registerUser = async (userData) => {
   const { email, password } = userData;

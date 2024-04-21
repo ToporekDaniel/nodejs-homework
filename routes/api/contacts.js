@@ -6,7 +6,7 @@ const {
   removeContact,
   addContact,
   updateContact,
-} = require("../../models/contacts");
+} = require("../../controllers/contacts");
 
 const { schemaPOST, schemaPUT } = require("../../models/validateContact");
 

@@ -1,4 +1,4 @@
-const Joi = require("joi");
+const Joi = require("@hapi/joi");
 
 const registerSchema = Joi.object({
   email: Joi.string().email().required(),
