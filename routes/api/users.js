@@ -1,7 +1,12 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const { registerUser, authenticateUser } = require("../../controllers/user");
+const {
+  registerUser,
+  authenticateUser,
+  logoutUser,
+} = require("../../controllers/user");
 const { registerSchema, loginSchema } = require("../../models/validateUser");
+const authMiddleware = require("../../middleware/jwt");
 
 const router = express.Router();
 
@@ -33,10 +38,23 @@ router.post("/login", async (req, res) => {
     const token = jwt.sign(payload, process.env.SECRET, {
       expiresIn: "12h",
     });
+    user.token = token;
+    await user.save();
     res.status(200).json({
       token,
       user: { email: user.email, subscription: user.subscription },
     });
+  } catch (error) {
+    res.status(401).json({ message: error.message });
+  }
+});
+
+router.put("/logout/:userId", authMiddleware, async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    await logoutUser(userId);
+    res.status(204).send();
   } catch (error) {
     res.status(401).json({ message: error.message });
   }

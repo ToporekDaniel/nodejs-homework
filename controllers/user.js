@@ -25,7 +25,17 @@ const authenticateUser = async (userData) => {
   return user;
 };
 
+const logoutUser = async (userId) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new Error("User not found");
+  }
+  user.token = null;
+  await user.save();
+};
+
 module.exports = {
   registerUser,
   authenticateUser,
+  logoutUser,
 };
