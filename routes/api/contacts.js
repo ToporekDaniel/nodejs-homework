@@ -8,7 +8,7 @@ const {
   updateContact,
 } = require("../../models/contacts");
 
-const { schemaPOST, schemaPUT } = require("../../models/validate");
+const { schemaPOST, schemaPUT } = require("../../models/validateContact");
 
 const mongoose = require("mongoose");
 
