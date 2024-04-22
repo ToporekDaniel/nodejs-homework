@@ -4,6 +4,7 @@ const {
   registerUser,
   authenticateUser,
   logoutUser,
+  getCurrentUser,
 } = require("../../controllers/user");
 const { registerSchema, loginSchema } = require("../../models/validateUser");
 const authMiddleware = require("../../middleware/jwt");
@@ -49,14 +50,27 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.put("/logout/:userId", authMiddleware, async (req, res) => {
-  const { userId } = req.params;
-
+router.put("/logout", authMiddleware, async (req, res) => {
   try {
-    await logoutUser(userId);
+    await logoutUser(req.user._id);
     res.status(204).send();
   } catch (error) {
     res.status(401).json({ message: error.message });
+  }
+});
+
+router.get("/current", authMiddleware, async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "Not authorized" });
+  }
+  try {
+    const user = await getCurrentUser(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json({ email: user.email, subscription: user.subscription });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
