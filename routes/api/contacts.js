@@ -6,9 +6,9 @@ const {
   removeContact,
   addContact,
   updateContact,
-} = require("../../models/contacts");
+} = require("../../controllers/contacts");
 
-const { schemaPOST, schemaPUT } = require("../../models/validate");
+const { schemaPOST, schemaPUT } = require("../../models/validateContact");
 
 const mongoose = require("mongoose");
 
@@ -42,7 +42,8 @@ const validateBody = (schema) => {
 
 router.get("/", async (req, res, next) => {
   try {
-    const contacts = await listContacts();
+    const userId = req.user._id;
+    const contacts = await listContacts(userId);
     res.status(200).json(contacts);
   } catch (error) {
     console.error(error.message);
@@ -65,7 +66,8 @@ router.get("/:contactId", validateContactId, async (req, res, next) => {
 router.post("/", validateBody(schemaPOST), async (req, res, next) => {
   try {
     const { name, email, phone } = req.validatedBody;
-    const newContact = await addContact({ name, email, phone });
+    const userId = req.user._id;
+    const newContact = await addContact({ name, email, phone }, userId);
     res.status(201).json(newContact);
   } catch (error) {
     console.error(error.message);
