@@ -1,8 +1,12 @@
 const Contact = require("../models/contactSchema");
 const mongoose = require("mongoose");
 
-const listContacts = async () => {
-  return Contact.find();
+// const listContacts = async () => {
+//   return Contact.find();
+// };
+
+const listContacts = async (userId) => {
+  return Contact.find({ owner: userId });
 };
 
 const getContactById = async (contactId) => {
@@ -19,8 +23,12 @@ const getContactById = async (contactId) => {
   }
 };
 
-const addContact = async (body) => {
-  return Contact.create(body);
+// const addContact = async (body) => {
+//   return Contact.create(body);
+// };
+
+const addContact = async ({ name, email, phone }, userId) => {
+  return Contact.create({ name, email, phone, owner: userId });
 };
 
 const updateContact = async (contactId, body) => {
