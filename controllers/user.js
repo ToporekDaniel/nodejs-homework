@@ -7,6 +7,7 @@ const registerUser = async (userData) => {
     throw new Error("Email already in use");
   }
   const newUser = new User({ email });
+  await newUser.setavatarURL(email);
   await newUser.setPassword(password);
   await newUser.save();
   return newUser;

@@ -21,7 +21,13 @@ router.post("/signup", async (req, res) => {
     const user = await registerUser(req.body);
     res
       .status(201)
-      .json({ user: { email: user.email, subscription: user.subscription } });
+      .json({
+        user: {
+          email: user.email,
+          subscription: user.subscription,
+          avatar: user.avatarURL,
+        },
+      });
   } catch (error) {
     res.status(409).json({ message: error.message });
   }
