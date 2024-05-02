@@ -27,7 +27,11 @@ const userSchema = new mongoose.Schema({
 });
 
 userSchema.methods.setavatarURL = function (email) {
-  this.avatarURL = gravatar.url(email, { s: "250", r: "pg", d: "mm" }, true);
+  this.avatarURL = gravatar.url(
+    email,
+    { s: "250", r: "pg", d: "robohash" },
+    true
+  );
 };
 
 userSchema.methods.setPassword = async function (password) {

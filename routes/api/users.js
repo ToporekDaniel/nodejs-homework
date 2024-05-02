@@ -5,9 +5,11 @@ const {
   authenticateUser,
   logoutUser,
   getCurrentUser,
+  makeAvatar,
 } = require("../../controllers/user");
 const { registerSchema, loginSchema } = require("../../models/validateUser");
 const authMiddleware = require("../../middleware/jwt");
+const upload = require("../../config/multer");
 
 const router = express.Router();
 
@@ -19,15 +21,13 @@ router.post("/signup", async (req, res) => {
 
   try {
     const user = await registerUser(req.body);
-    res
-      .status(201)
-      .json({
-        user: {
-          email: user.email,
-          subscription: user.subscription,
-          avatar: user.avatarURL,
-        },
-      });
+    res.status(201).json({
+      user: {
+        email: user.email,
+        subscription: user.subscription,
+        avatar: user.avatarURL,
+      },
+    });
   } catch (error) {
     res.status(409).json({ message: error.message });
   }
@@ -74,10 +74,34 @@ router.get("/current", authMiddleware, async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.json({ email: user.email, subscription: user.subscription });
+    res.json({
+      email: user.email,
+      subscription: user.subscription,
+      avatar: user.avatarURL,
+    });
   } catch (error) {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
+router.patch(
+  "/avatars",
+  authMiddleware,
+  upload.single("avatar"),
+  async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+    try {
+      const user = req.user;
+      const filePatch = req.file.path;
+      const avatar = await makeAvatar(user._id, filePatch);
+
+      res.status(200).json({ avatarURL: avatar });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
 
 module.exports = router;

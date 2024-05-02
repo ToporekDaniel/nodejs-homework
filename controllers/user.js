@@ -1,4 +1,7 @@
 const User = require("../models/userSchema");
+const Jimp = require("jimp");
+const fs = require("fs");
+const path = require("path");
 
 const registerUser = async (userData) => {
   const { email, password } = userData;
@@ -40,9 +43,23 @@ const getCurrentUser = async (userId) => {
   return user;
 };
 
+const makeAvatar = async (userId, filePath) => {
+  const user = await User.findById(userId).select("-password");
+  const image = await Jimp.read(filePath);
+  await image.resize(250, 250).rotate(360).quality(90);
+  const newFilename = `avatar-${userId}-${Date.now()}.jpg`;
+  const outputPath = path.join(__dirname, "../public/avatars", newFilename);
+  await image.writeAsync(outputPath);
+  fs.unlinkSync(filePath);
+  user.avatarURL = `/avatars/${newFilename}`;
+  await user.save();
+  return newFilename;
+};
+
 module.exports = {
   registerUser,
   authenticateUser,
   logoutUser,
   getCurrentUser,
+  makeAvatar,
 };
