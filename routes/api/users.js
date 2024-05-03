@@ -13,6 +13,25 @@ const upload = require("../../config/multer");
 
 const router = express.Router();
 
+const fs = require("fs").promises;
+const path = require("path");
+
+// Funkcja sprawdzająca istnienie i czytelność pliku
+async function validateFilePath(filePath) {
+  try {
+    await fs.access(filePath, fs.constants.F_OK | fs.constants.R_OK);
+    return true;
+  } catch (error) {
+    console.error("File does not exist or is not readable", error);
+    return false;
+  }
+}
+
+// Funkcja walidująca nazwę pliku
+function isValidFileName(filePath) {
+  return /^[a-zA-Z0-9_.-]+$/.test(path.basename(filePath));
+}
+
 router.post("/signup", async (req, res) => {
   const { error } = registerSchema.validate(req.body);
   if (error) {
@@ -92,13 +111,27 @@ router.patch(
     if (!req.user) {
       return res.status(401).json({ message: "Not authorized" });
     }
+
+    const filePatch = req.file.path;
+
+    // Walidacja ścieżki pliku i nazwy pliku
+    if (!(await validateFilePath(filePatch)) || !isValidFileName(filePatch)) {
+      return res
+        .status(400)
+        .json({ message: "Invalid file path or file name" });
+    }
+
     try {
       const user = req.user;
-      const filePatch = req.file.path;
       const avatar = await makeAvatar(user._id, filePatch);
-
-      res.status(200).json({ avatarURL: avatar });
+      res.status(200).json({ avatarURL: "/avatars/" + avatar });
     } catch (error) {
+      // Czyść po sobie, jeśli coś pójdzie nie tak
+      try {
+        await fs.unlink(filePatch);
+      } catch (fsError) {
+        console.error("Failed to delete file after error", fsError);
+      }
       res.status(500).json({ error: error.message });
     }
   }
