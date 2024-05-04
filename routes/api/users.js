@@ -7,6 +7,7 @@ const {
   getCurrentUser,
   makeAvatar,
   emailVerification,
+  sendAnotherToken,
 } = require("../../controllers/user");
 const { registerSchema, loginSchema } = require("../../models/validateUser");
 const authMiddleware = require("../../middleware/jwt");
@@ -145,7 +146,20 @@ router.get("/verify/:verificationToken", async (req, res) => {
     await emailVerification(verificationToken);
     res.status(200).json({ message: "Verification successful" });
   } catch (error) {
-    res.status(404).json({ message: error.message });
+    res.status(error.statusCode || 500).json({ message: error.message });
+  }
+});
+
+router.post("/verify", async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ message: "missing required field email" });
+  }
+  try {
+    await sendAnotherToken(email);
+    res.status(200).json({ message: "Verification email sent" });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({ message: error.message });
   }
 });
 

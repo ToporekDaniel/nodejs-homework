@@ -5,6 +5,10 @@ const path = require("path");
 const nanoid = require("nanoid");
 const sendEmail = require("./nodemailer");
 
+// całkiem fajna opcja z tym HttpError
+// wszystkie błędy zwracane przez funkcje są w jednym formacie
+// i można je łatwo obsłużyć w jednym miejscu
+// muszę dodać to do wszystkich moich funkcji w wolnym czasie
 class HttpError extends Error {
   constructor(message, statusCode) {
     super(message);
@@ -80,6 +84,19 @@ const emailVerification = async (verificationToken) => {
   await user.save();
 };
 
+const sendAnotherToken = async (email) => {
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new HttpError("User not found", 404);
+  }
+  if (user.verify) {
+    throw new HttpError("Verification has already been passed", 400);
+  }
+  user.verificationToken = nanoid();
+  await user.save();
+  sendEmail(email, user.verificationToken);
+};
+
 module.exports = {
   registerUser,
   authenticateUser,
@@ -87,4 +104,5 @@ module.exports = {
   getCurrentUser,
   makeAvatar,
   emailVerification,
+  sendAnotherToken,
 };
