@@ -73,7 +73,7 @@ router.post("/login", async (req, res) => {
       user: { email: user.email, subscription: user.subscription },
     });
   } catch (error) {
-    res.status(401).json({ message: error.message });
+    res.status(error.statusCode || 500).json({ message: error.message });
   }
 });
 

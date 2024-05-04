@@ -2,8 +2,8 @@ const User = require("../models/userSchema");
 const Jimp = require("jimp");
 const fs = require("fs").promises;
 const path = require("path");
-const nanoid = require("nanoid");
 const sendEmail = require("./nodemailer");
+const uuid = require("uuid").v4;
 
 // całkiem fajna opcja z tym HttpError
 // wszystkie błędy zwracane przez funkcje są w jednym formacie
@@ -25,7 +25,7 @@ const registerUser = async (userData) => {
   const newUser = new User({ email });
   await newUser.setavatarURL(email);
   await newUser.setPassword(password);
-  newUser.verificationToken = nanoid();
+  newUser.verificationToken = uuid();
   await newUser.save();
   sendEmail(email, newUser.verificationToken);
   return newUser;
@@ -35,15 +35,20 @@ const authenticateUser = async (userData) => {
   const { email, password } = userData;
   const user = await User.findOne({ email });
   if (!user) {
-    throw new Error("User not found");
+    throw new HttpError("User not found", 404);
+  }
+  if (!user.verify) {
+    throw new HttpError(
+      "Email not verified. Please check your email to verify your account.",
+      403
+    );
   }
   const isPasswordCorrect = await user.validatePassword(password);
   if (!isPasswordCorrect) {
-    throw new Error("Invalid password");
+    throw new HttpError("Invalid password", 401);
   }
   return user;
 };
-
 const logoutUser = async (userId) => {
   const user = await User.findById(userId);
   if (!user) {
@@ -80,7 +85,8 @@ const emailVerification = async (verificationToken) => {
     throw new HttpError("Verification has already been passed", 400);
   }
   user.verify = true;
-  user.verificationToken = null; // Clear the verification token
+  // user.verificationToken = null; // usuwanie tokena po weryfikacji
+  // jeśli ta linijka zostaje to weryfikacja nie działa
   await user.save();
 };
 
@@ -92,7 +98,7 @@ const sendAnotherToken = async (email) => {
   if (user.verify) {
     throw new HttpError("Verification has already been passed", 400);
   }
-  user.verificationToken = nanoid();
+  user.verificationToken = uuid();
   await user.save();
   sendEmail(email, user.verificationToken);
 };
