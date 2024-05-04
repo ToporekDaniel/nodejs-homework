@@ -10,20 +10,24 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Define the email options
-const mailOptions = {
-  from: "Ala@makota.com",
-  to: "daniel_toporek@wp.pl",
-  subject: "Test Nodemailer Email",
-  text: "Hello from Nodemailer!",
-  html: "<p>Hello from <b>Nodemailer</b>!</p>",
-};
+function sendEmail(email, token) {
+  // Define the email options
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Your verification token for the app",
+    text: "Welcome to the app!",
+    html: `<p>Your verification token is: <b>${token}</b></p>`,
+  };
 
-// Send the email
-transporter.sendMail(mailOptions, (error, info) => {
-  if (error) {
-    console.log("Error occurred:", error);
-  } else {
-    console.log("Email sent:", info.response);
-  }
-});
+  // Send the email
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.log("Error occurred:", error);
+    } else {
+      console.log("Email sent:", info.response);
+    }
+  });
+}
+
+module.exports = sendEmail;

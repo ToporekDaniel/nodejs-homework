@@ -2,6 +2,8 @@ const User = require("../models/userSchema");
 const Jimp = require("jimp");
 const fs = require("fs").promises;
 const path = require("path");
+const nanoid = require("nanoid");
+const sendEmail = require("./nodemailer");
 
 const registerUser = async (userData) => {
   const { email, password } = userData;
@@ -12,7 +14,9 @@ const registerUser = async (userData) => {
   const newUser = new User({ email });
   await newUser.setavatarURL(email);
   await newUser.setPassword(password);
+  newUser.verificationToken = nanoid();
   await newUser.save();
+  sendEmail(email, newUser.verificationToken);
   return newUser;
 };
 
