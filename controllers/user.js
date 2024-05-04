@@ -5,6 +5,13 @@ const path = require("path");
 const nanoid = require("nanoid");
 const sendEmail = require("./nodemailer");
 
+class HttpError extends Error {
+  constructor(message, statusCode) {
+    super(message);
+    this.statusCode = statusCode;
+  }
+}
+
 const registerUser = async (userData) => {
   const { email, password } = userData;
   const existingUser = await User.findOne({ email });
@@ -60,10 +67,24 @@ const makeAvatar = async (userId, filePath) => {
   return newFilename;
 };
 
+const emailVerification = async (verificationToken) => {
+  const user = await User.findOne({ verificationToken });
+  if (!user) {
+    throw new HttpError("User not found", 404);
+  }
+  if (user.verify) {
+    throw new HttpError("Verification has already been passed", 400);
+  }
+  user.verify = true;
+  user.verificationToken = null; // Clear the verification token
+  await user.save();
+};
+
 module.exports = {
   registerUser,
   authenticateUser,
   logoutUser,
   getCurrentUser,
   makeAvatar,
+  emailVerification,
 };

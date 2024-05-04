@@ -6,6 +6,7 @@ const {
   logoutUser,
   getCurrentUser,
   makeAvatar,
+  emailVerification,
 } = require("../../controllers/user");
 const { registerSchema, loginSchema } = require("../../models/validateUser");
 const authMiddleware = require("../../middleware/jwt");
@@ -136,5 +137,16 @@ router.patch(
     }
   }
 );
+
+router.get("/verify/:verificationToken", async (req, res) => {
+  const { verificationToken } = req.params;
+
+  try {
+    await emailVerification(verificationToken);
+    res.status(200).json({ message: "Verification successful" });
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+});
 
 module.exports = router;
